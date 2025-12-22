@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <algorithm>
 
 using namespace std;
 
@@ -18,8 +19,8 @@ public:
 	}
 	~Item() {}
 
-	string GetName() { return name_; }
-	int GetPrice() { return price_; }
+	string GetName() const { return name_; }
+	int GetPrice() const { return price_; }
 
 private:
 	string name_;
@@ -37,21 +38,32 @@ private:
 public:
 	Inventory(int capacity_ = 10)
 	{
-		pItems_ = new Item[capacity_];
+		pItems_ = new T[capacity_];
 		this->capacity_ = capacity_;
 		size_ = 0;
+	}
+	Inventory(const Inventory<T>& other)
+	{
+		capacity_ = other.capacity_;
+		size_ = other.size_;
+		pItems_ = new T[capacity_];
+		
+		for (int i = 0; i < size_; ++i) 
+		{
+			pItems_[i] = other.pItems_[i];
+		}
+		cout << "인벤토리 복사 완료" << endl;
 	}
 	~Inventory()
 	{
 		delete[] pItems_;
 	}
-
+	int GetCapacity() const { return capacity_; }
 	void AddItem(Item item)
 	{
 		if (size_ >= capacity_)
 		{
-			cout << "인벤토리가 꽉 찼습니다!" << endl;
-			return;
+			Resize(capacity_ * 2);
 		}
 		pItems_[size_++] = item;
 
@@ -83,23 +95,62 @@ public:
 			}
 		}
 	}
+	void Assign(const Inventory<T>& other)
+	{
+
+	}
+	void Resize(int newCapacity)
+	{
+		if(newCapacity < size_)
+			size_ = newCapacity;
+
+		T* newItems = new T[newCapacity];
+
+		for (int i = 0; i < size_; ++i)
+			newItems[i] = pItems_[i];
+
+		delete[] pItems_;
+		pItems_ = newItems;
+		capacity_ = newCapacity;
+	}
+	
+	void SortItems()
+	{
+		sort(pItems_, pItems_ + size_, [](const Item& a, const Item& b)
+			{ return a.GetPrice() < b.GetPrice(); }
+			);
+	}
 };
 
 
 
 int main()
 {
-	Item item("Hello Item", 1000);
-	Inventory<Item> inventory;
-	inventory.AddItem(item);
-	inventory.AddItem(Item("Hello Item2", 1100));
-
-	for (int i = 0; i < 10; i++)
+	Inventory<Item>* itemInventory = new Inventory<Item>();
+	for (int i = 0; i < 11; ++i)
 	{
-		inventory.AddItem(Item("Hello Item" + to_string(i), 100));
+		itemInventory->AddItem(Item("Item" + to_string(i), i * 100));
 	}
 
-	inventory.RemoveLastItem();
-	inventory.PrintAllItems();
+	itemInventory->PrintAllItems();
+	cout << "ItemCapacity : " << itemInventory->GetCapacity() << endl;
+
+	itemInventory->Resize(25);
+	for (int i = 0; i < 14; ++i)
+	{
+		itemInventory->AddItem(Item("Item" +to_string(i), i * 100));
+	}
+
+	itemInventory->PrintAllItems();
+	cout << "ItemCapacity : " << itemInventory->GetCapacity() << endl;
+
+	itemInventory->SortItems();
+	itemInventory->PrintAllItems();
+
+	Inventory<Item>* itemInventory2 = new Inventory<Item>(*itemInventory);
+	itemInventory2->PrintAllItems();
+
+	delete itemInventory;
+	delete itemInventory2;
 	return 0;
 }
